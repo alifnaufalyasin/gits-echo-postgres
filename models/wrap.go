@@ -25,5 +25,11 @@ func (j JSONResponseData) Response(c echo.Context) error {
 }
 
 func (j JSONResponse) Response(c echo.Context) error {
-	return c.JSON(int(j.Code), j)
+	c.JSON(int(j.Code), j)
+	return nil
+}
+
+func (e Error) Response(c echo.Context) error {
+	c.JSON(int(e.Code), e)
+	return nil
 }

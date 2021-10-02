@@ -1,43 +1,24 @@
 package models
 
 import (
-	"net/http"
 	"time"
 )
 
+const (
+	MahasiswaTableName = "mahasiswa"
+)
+
 type Mahasiswa struct {
-	ID        string    `json:"id"`
-	Nama      string    `json:"nama"`
-	Umur      int64     `json:"umur"`
-	Kelas     string    `json:"kelas"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         string    `gorm:"type:varchar(50);primary_key" json:"id"`
+	Nama       string    `gorm:"type:varchar(100);not_null" json:"nama"`
+	Kelas      string    `gorm:"type:varchar(50);not_null" json:"kelas"`
+	Nilai      []Nilai   `gorm:"foreignKey:Mahasiswa" json:"nilai"`
+	Organisasi string    `gorm:"type:varchar(50);not_null" json:"organisasi"`
+	CreatedAt  time.Time `gorm:"type:timestamptz;not_null" json:"created_at"`
+	UpdatedAt  time.Time `gorm:"type:timestamptz;not_null" json:"updated_at"`
 }
 
-func (m *Mahasiswa) Validate() Error {
-	if m.ID == "" {
-		return Error{
-			Code:    http.StatusBadRequest,
-			Message: "Mahasiswa ID not found",
-		}
-	}
-	if m.Nama == "" {
-		return Error{
-			Code:    http.StatusBadRequest,
-			Message: "Mahasiswa Name not found",
-		}
-	}
-	if m.Umur <= 0 {
-		return Error{
-			Code:    http.StatusBadRequest,
-			Message: "Mahasiswa Age not found",
-		}
-	}
-	if m.Kelas == "" {
-		return Error{
-			Code:    http.StatusBadRequest,
-			Message: "Mahasiswa Class not found",
-		}
-	}
-	return Error{}
+// TableName specifies table name for MahasiswaModel.
+func (model *Mahasiswa) TableName() string {
+	return MahasiswaTableName
 }

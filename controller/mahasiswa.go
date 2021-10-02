@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"gits-echo-boilerplate/database"
 	"gits-echo-boilerplate/models"
 	"math/rand"
@@ -27,15 +26,7 @@ func CreateMahasiswa(c echo.Context) error {
 	m.CreatedAt = time.Now()
 	m.UpdatedAt = time.Now()
 
-	if err := m.Validate(); err.Code > 0 {
-		fmt.Println("sini", err.Message)
-		return (models.JSONResponse{
-			Code:    err.Code,
-			Message: err.Message,
-		}).Response(c)
-	}
-
-	err := database.CreateMahasiswa(m)
+	maha, err := database.CreateMahasiswa(m)
 	if err.Code > 0 {
 		return (models.JSONResponse{
 			Code:    err.Code,
@@ -44,7 +35,7 @@ func CreateMahasiswa(c echo.Context) error {
 	}
 	resp := models.JSONResponseData{
 		Code:    http.StatusCreated,
-		Data:    m,
+		Data:    maha,
 		Message: "Data Created",
 	}
 	return resp.Response(c)
@@ -56,10 +47,7 @@ func GetMahasiswaByID(c echo.Context) error {
 
 	m, err := database.GetMahasiswaByID(id)
 	if err.Code > 0 {
-		return (models.JSONResponse{
-			Code:    err.Code,
-			Message: err.Message,
-		}).Response(c)
+		return err.Response(c)
 	}
 
 	return (models.JSONResponseData{
@@ -78,10 +66,7 @@ func GetAllMahasiswa(c echo.Context) error {
 		Kelas: kelas,
 	})
 	if err.Code > 0 {
-		return (models.JSONResponse{
-			Code:    err.Code,
-			Message: err.Message,
-		}).Response(c)
+		return err.Response(c)
 	}
 
 	return (models.JSONResponseData{
@@ -105,20 +90,9 @@ func UpdateMahasiswa(c echo.Context) error {
 	m.ID = id
 	m.UpdatedAt = time.Now()
 
-	if err := m.Validate(); err.Code > 0 {
-		fmt.Println("sini", err.Message)
-		return (models.JSONResponse{
-			Code:    err.Code,
-			Message: err.Message,
-		}).Response(c)
-	}
-
 	_, err := database.UpdateMahasiswa(m)
 	if err.Code > 0 {
-		return (models.JSONResponse{
-			Code:    err.Code,
-			Message: err.Message,
-		}).Response(c)
+		return err.Response(c)
 	}
 	resp := models.JSONResponseData{
 		Code:    http.StatusOK,
@@ -134,10 +108,7 @@ func DeleteMahasiswa(c echo.Context) error {
 	_, err := database.DeleteMahasiswa(id)
 
 	if err.Code > 0 {
-		return (models.JSONResponse{
-			Code:    err.Code,
-			Message: err.Message,
-		}).Response(c)
+		return err.Response(c)
 	}
 
 	resp := models.JSONResponse{

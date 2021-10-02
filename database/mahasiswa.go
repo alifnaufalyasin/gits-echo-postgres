@@ -1,10 +1,11 @@
 package database
 
 import (
-	"database/sql"
-	"fmt"
 	"gits-echo-boilerplate/models"
 	"net/http"
+	"time"
+
+	"gorm.io/gorm"
 )
 
 type FilterSearch struct {
@@ -12,163 +13,99 @@ type FilterSearch struct {
 	Kelas string
 }
 
-func CreateMahasiswa(data *models.Mahasiswa) models.Error {
-	query := `
-		INSERT INTO
-			mahasiswa(id, nama, umur, kelas, created_at, updated_at)
-		VALUES($1, $2, $3, $4, $5, $6)
-	`
-	con := CreateCon()
-	row := con.QueryRow(query,
-		data.ID,
-		data.Nama,
-		data.Umur,
-		data.Kelas,
-		data.CreatedAt,
-		data.UpdatedAt,
-	)
-	if row.Err() != nil {
-		return models.Error{
+var (
+	mahasiswa models.Mahasiswa
+)
+
+func CreateMahasiswa(data *models.Mahasiswa) (models.Mahasiswa, models.Error) {
+	db := CreateCon()
+	res := db.Create(data)
+	if res.Error != nil {
+		return models.Mahasiswa{}, models.Error{
 			Code:    http.StatusInternalServerError,
-			Message: "Failed to insert data",
+			Message: res.Error.Error(),
 		}
 	}
-	return models.Error{}
+	if res.RowsAffected <= 0 {
+		return models.Mahasiswa{}, models.Error{
+			Code:    http.StatusInternalServerError,
+			Message: "Gagal menambahkan data",
+		}
+	}
+	return *data, models.Error{}
 }
 
-func GetMahasiswaByID(ID string) (m models.Mahasiswa, err models.Error) {
-	query := `
-	SELECT *
-	FROM mahasiswa
-	WHERE id = $1`
-
-	con := CreateCon()
-	row := con.QueryRow(query, ID)
-
-	var (
-		updatedAt sql.NullTime
-		createdAt sql.NullTime
-	)
-
-	if err := row.Scan(
-		&m.ID,
-		&m.Nama,
-		&m.Umur,
-		&m.Kelas,
-		&createdAt,
-		&updatedAt,
-	); err != nil {
-		fmt.Println(err)
+func GetMahasiswaByID(ID string) (models.Mahasiswa, models.Error) {
+	db := CreateCon()
+	// result := map[string]interface{}{}
+	res := db.First(&mahasiswa, "id = ?", ID)
+	if res.Error != nil {
 		return models.Mahasiswa{}, models.Error{
-			Code:    500,
-			Message: err.Error(),
+			Code:    http.StatusInternalServerError,
+			Message: res.Error.Error(),
 		}
 	}
-
-	m.CreatedAt = createdAt.Time
-	m.UpdatedAt = updatedAt.Time
-
-	return
+	var m models.Mahasiswa
+	err := res.Scan(&m)
+	if err.Error != nil {
+		return models.Mahasiswa{}, models.Error{
+			Code:    http.StatusInternalServerError,
+			Message: res.Error.Error(),
+		}
+	}
+	return m, models.Error{}
 }
 
 func GetAllMahasiswa(filter FilterSearch) ([]models.Mahasiswa, models.Error) {
-	query := `
-	SELECT *
-	FROM mahasiswa
-	`
-
+	var mahasiswas []models.Mahasiswa
+	db := CreateCon()
+	var res *gorm.DB
 	if filter.Kelas != "" && filter.Umur > 0 {
-		query += fmt.Sprintf("WHERE kelas like '%%%s%%' AND umur = %d", filter.Kelas, filter.Umur)
+		res = db.Where("kelas LIKE ? AND umur = ?", filter.Kelas, filter.Umur).Find(&mahasiswas)
 	} else if filter.Kelas != "" {
-		query += fmt.Sprintf("WHERE kelas like '%%%s%%'", filter.Kelas)
+		res = db.Where("kelas LIKE ?", filter.Kelas).Find(&mahasiswas)
 	} else if filter.Umur > 0 {
-		query += fmt.Sprintf("WHERE umur = %d", filter.Umur)
+		res = db.Where("umur = ?", filter.Umur).Find(&mahasiswas)
+	} else {
+		res = db.Find(&mahasiswas)
 	}
 
-	con := CreateCon()
-	var mahasiswa []models.Mahasiswa
-	rows, err := con.Query(query)
-	if err != nil {
+	if res.Error != nil {
 		return []models.Mahasiswa{}, models.Error{
 			Code:    500,
-			Message: err.Error(),
+			Message: res.Error.Error(),
 		}
 	}
-	for rows.Next() {
-		var m models.Mahasiswa
-		if err := rows.Scan(&m.ID, &m.Nama, &m.Umur, &m.Kelas, &m.CreatedAt, &m.UpdatedAt); err != nil {
-			return mahasiswa, models.Error{
-				Code:    500,
-				Message: err.Error(),
-			}
-		}
-		mahasiswa = append(mahasiswa, m)
-	}
-	if err = rows.Err(); err != nil {
-		return mahasiswa, models.Error{
-			Code:    500,
-			Message: err.Error(),
-		}
-	}
-	return mahasiswa, models.Error{}
+	return mahasiswas, models.Error{}
 }
 
 func UpdateMahasiswa(data *models.Mahasiswa) (int64, models.Error) {
-	query := `
-	UPDATE mahasiswa
-	SET
-		nama = $2,
-		umur = $3,
-		kelas = $4,
-		updated_at = $5
-	WHERE id = $1
-	`
-	con := CreateCon()
-	affectedRow, err := con.Exec(query,
-		data.ID,
-		data.Nama,
-		data.Umur,
-		data.Kelas,
-		data.UpdatedAt,
-	)
-	if err != nil {
+	m := models.Mahasiswa{}
+	db := CreateCon()
+	err := db.First(&m, "id = ?", data.ID)
+	if err.Error != nil {
 		return 0, models.Error{
 			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
+			Message: err.Error.Error(),
 		}
 	}
-	row, _ := affectedRow.RowsAffected()
-	if row <= 0 {
-		return 0, models.Error{
-			Code:    http.StatusInternalServerError,
-			Message: "Gagal mengupdate data",
-		}
-	}
+	m.Nama = data.Nama
+	m.Kelas = data.Kelas
+	m.Organisasi = data.Organisasi
+	m.UpdatedAt = time.Now()
 
-	return row, models.Error{}
+	err = db.Save(&m)
+	if err.Error != nil {
+		return 0, models.Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error.Error(),
+		}
+	}
+	return err.RowsAffected, models.Error{}
 }
 
 func DeleteMahasiswa(id string) (int64, models.Error) {
-	query := `
-	DELETE FROM mahasiswa
-	WHERE id = $1
-	`
-	con := CreateCon()
-	affectedRow, err := con.Exec(query, id)
-
-	if err != nil {
-		return 0, models.Error{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		}
-	}
-	row, _ := affectedRow.RowsAffected()
-	if row <= 0 {
-		return 0, models.Error{
-			Code:    http.StatusInternalServerError,
-			Message: "Gagal menghapus data",
-		}
-	}
-
-	return row, models.Error{}
+	db := CreateCon()
+	err := db.Delete(&models.Mahasiswa{}, "id = ?", id)
+	return err.RowsAffected, models.Error{}
 }
