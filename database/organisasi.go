@@ -6,26 +6,21 @@ import (
 	"time"
 )
 
-type FilterSearch struct {
-	Umur  int64
-	Kelas string
-}
-
 var (
-	mahasiswa models.Mahasiswa
+	organisasi models.Organisasi
 )
 
-func CreateMahasiswa(data *models.Mahasiswa) (models.Mahasiswa, models.Error) {
+func CreateOrganisasi(data *models.Organisasi) (models.Organisasi, models.Error) {
 	db := CreateCon()
 	res := db.Create(data)
 	if res.Error != nil {
-		return models.Mahasiswa{}, models.Error{
+		return models.Organisasi{}, models.Error{
 			Code:    http.StatusInternalServerError,
 			Message: res.Error.Error(),
 		}
 	}
 	if res.RowsAffected <= 0 {
-		return models.Mahasiswa{}, models.Error{
+		return models.Organisasi{}, models.Error{
 			Code:    http.StatusInternalServerError,
 			Message: "Gagal menambahkan data",
 		}
@@ -33,20 +28,20 @@ func CreateMahasiswa(data *models.Mahasiswa) (models.Mahasiswa, models.Error) {
 	return *data, models.Error{}
 }
 
-func GetMahasiswaByID(ID string) (models.Mahasiswa, models.Error) {
+func GetOrganisasiByID(ID string) (models.Organisasi, models.Error) {
 	db := CreateCon()
 	// result := map[string]interface{}{}
-	res := db.First(&mahasiswa, "id = ?", ID)
+	res := db.First(&organisasi, "id = ?", ID)
 	if res.Error != nil {
-		return models.Mahasiswa{}, models.Error{
+		return models.Organisasi{}, models.Error{
 			Code:    http.StatusInternalServerError,
 			Message: res.Error.Error(),
 		}
 	}
-	var m models.Mahasiswa
+	var m models.Organisasi
 	err := res.Scan(&m)
 	if err.Error != nil {
-		return models.Mahasiswa{}, models.Error{
+		return models.Organisasi{}, models.Error{
 			Code:    http.StatusInternalServerError,
 			Message: res.Error.Error(),
 		}
@@ -54,38 +49,39 @@ func GetMahasiswaByID(ID string) (models.Mahasiswa, models.Error) {
 	return m, models.Error{}
 }
 
-func GetAllMahasiswa() ([]models.Mahasiswa, models.Error) {
-	var mahasiswas []models.Mahasiswa
+func GetAllOrganisasi(organisasi string) ([]models.Organisasi, models.Error) {
+	var AllOrganisasi []models.Organisasi
 	db := CreateCon()
 	// var res *gorm.DB
 
-	res := db.Find(&mahasiswas)
+	res := db.Find(&AllOrganisasi)
 
 	if res.Error != nil {
-		return []models.Mahasiswa{}, models.Error{
+		return []models.Organisasi{}, models.Error{
 			Code:    500,
 			Message: res.Error.Error(),
 		}
 	}
-	return mahasiswas, models.Error{}
+	return AllOrganisasi, models.Error{}
 }
 
-func UpdateMahasiswa(data *models.Mahasiswa) (int64, models.Error) {
-	m := models.Mahasiswa{}
+func UpdateOrganisasi(data *models.Organisasi) (int64, models.Error) {
+	o := models.Organisasi{}
 	db := CreateCon()
-	err := db.First(&m, "id = ?", data.ID)
+	err := db.First(&o, "id = ?", data.ID)
 	if err.Error != nil {
 		return 0, models.Error{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error.Error(),
 		}
 	}
-	m.Nama = data.Nama
-	m.Kelas = data.Kelas
-	m.Organisasi = data.Organisasi
-	m.UpdatedAt = time.Now()
+	o.Nama = data.Nama
+	o.Mahasiswa = data.Mahasiswa
+	o.Deskripsi = data.Deskripsi
+	o.Lokasi = data.Lokasi
+	o.UpdatedAt = time.Now()
 
-	err = db.Save(&m)
+	err = db.Save(&o)
 	if err.Error != nil {
 		return 0, models.Error{
 			Code:    http.StatusInternalServerError,
@@ -95,9 +91,9 @@ func UpdateMahasiswa(data *models.Mahasiswa) (int64, models.Error) {
 	return err.RowsAffected, models.Error{}
 }
 
-func DeleteMahasiswa(id string) (int64, models.Error) {
+func DeleteOrganisasi(id string) (int64, models.Error) {
 	db := CreateCon()
-	err := db.Delete(&models.Mahasiswa{}, "id = ?", id)
+	err := db.Delete(&models.Organisasi{}, id)
 	if err.Error != nil {
 		return 0, models.Error{
 			Code:    http.StatusInternalServerError,

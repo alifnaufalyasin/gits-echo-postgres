@@ -4,8 +4,10 @@ import (
 	"gits-echo-boilerplate/models"
 	"net/http"
 	"time"
+)
 
-	"gorm.io/gorm"
+var (
+	kelas models.Kelas
 )
 
 func CreateKelas(data *models.Kelas) (models.Kelas, models.Error) {
@@ -26,36 +28,33 @@ func CreateKelas(data *models.Kelas) (models.Kelas, models.Error) {
 	return *data, models.Error{}
 }
 
-// func GetMahasiswaByID(ID string) (models.Mahasiswa, models.Error) {
-// 	db := CreateCon()
-// 	// result := map[string]interface{}{}
-// 	res := db.First(&mahasiswa, "id = ?", ID)
-// 	if res.Error != nil {
-// 		return models.Mahasiswa{}, models.Error{
-// 			Code:    http.StatusInternalServerError,
-// 			Message: res.Error.Error(),
-// 		}
-// 	}
-// 	var m models.Mahasiswa
-// 	err := res.Scan(&m)
-// 	if err.Error != nil {
-// 		return models.Mahasiswa{}, models.Error{
-// 			Code:    http.StatusInternalServerError,
-// 			Message: res.Error.Error(),
-// 		}
-// 	}
-// 	return m, models.Error{}
-// }
+func GetKelasByID(ID string) (models.Kelas, models.Error) {
+	db := CreateCon()
+	// result := map[string]interface{}{}
+	res := db.First(&kelas, "id = ?", ID)
+	if res.Error != nil {
+		return models.Kelas{}, models.Error{
+			Code:    http.StatusInternalServerError,
+			Message: res.Error.Error(),
+		}
+	}
+	var m models.Kelas
+	err := res.Scan(&m)
+	if err.Error != nil {
+		return models.Kelas{}, models.Error{
+			Code:    http.StatusInternalServerError,
+			Message: res.Error.Error(),
+		}
+	}
+	return m, models.Error{}
+}
 
 func GetAllKelas(kelas string) ([]models.Kelas, models.Error) {
 	var AllKelas []models.Kelas
 	db := CreateCon()
-	var res *gorm.DB
-	if kelas != "" {
-		res = db.Where("kelas LIKE ?", kelas).Find(&AllKelas)
-	} else {
-		res = db.Find(&AllKelas)
-	}
+	// var res *gorm.DB
+
+	res := db.Find(&AllKelas)
 
 	if res.Error != nil {
 		return []models.Kelas{}, models.Error{
@@ -94,5 +93,11 @@ func UpdateKelas(data *models.Kelas) (int64, models.Error) {
 func DeleteKelas(id string) (int64, models.Error) {
 	db := CreateCon()
 	err := db.Delete(&models.Kelas{}, id)
+	if err.Error != nil {
+		return 0, models.Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error.Error(),
+		}
+	}
 	return err.RowsAffected, models.Error{}
 }

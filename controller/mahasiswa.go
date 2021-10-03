@@ -5,7 +5,6 @@ import (
 	"gits-echo-boilerplate/models"
 	"math/rand"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -58,13 +57,10 @@ func GetMahasiswaByID(c echo.Context) error {
 }
 
 func GetAllMahasiswa(c echo.Context) error {
-	kelas := c.QueryParam("kelas")
-	umur := c.QueryParam("umur")
-	i, _ := strconv.ParseInt(umur, 10, 64)
-	m, err := database.GetAllMahasiswa(database.FilterSearch{
-		Umur:  i,
-		Kelas: kelas,
-	})
+	// kelas := c.QueryParam("kelas")
+	// umur := c.QueryParam("umur")
+	// i, _ := strconv.ParseInt(umur, 10, 64)
+	m, err := database.GetAllMahasiswa()
 	if err.Code > 0 {
 		return err.Response(c)
 	}
