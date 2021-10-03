@@ -4,7 +4,7 @@
 - Clone this repo
 - Install the depedencies
 - run `docker-compose up` or `make postgres` untuk menjalankan postgresql
-- run `make migrateup` for creating the tabel (migrations table)
+- run `make createdb` untuk membuat database pada postgresql nya
 - run `go run server.go` or `make run` untuk menjalankan backend nya
 
 
